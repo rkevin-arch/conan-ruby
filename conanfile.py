@@ -108,11 +108,14 @@ class RubyConan(ConanFile):
             else:
                 autotools = AutoToolsBuildEnvironment(self)
                 self.run("autoconf")
+                sharedargs = (['--enable-shared', '--disable-static']
+                              if self.options.shared else
+                              ['--enable-static', '--disable-shared'])
                 autotools.configure(args=[
                     "--with-out-ext=" + ",".join(without_ext),
                     "--disable-install-rdoc",
                     "--without-gmp",
-                ])
+                ] + sharedargs)
                 autotools.make()
                 autotools.install()
 
