@@ -6,7 +6,7 @@ class RubyConan(ConanFile):
     name = "ruby"
     version = "2.5.1"
     license = "MIT"
-    url = "https://www.ruby-lang.org/"
+    url = "https://github.com/elizagamedev/conan-ruby"
     description = "The Ruby Programming Language"
     settings = "os", "compiler", "build_type", "arch"
     extensions = (
