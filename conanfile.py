@@ -83,7 +83,7 @@ class RubyConan(ConanFile):
 
     def build(self):
         without_ext = (tuple(extension for extension in self.extensions
-                          if not getattr(self.options, "with_" + extension)))
+                             if not getattr(self.options, "with_" + extension)))
 
         with tools.chdir("ruby"):
             if self.settings.compiler == "Visual Studio":
@@ -98,7 +98,7 @@ class RubyConan(ConanFile):
                             target = "x64-mswin64"
                         else:
                             raise Exception("Invalid arch")
-                        self.run("{} --prefix={} --target={} --without-ext=\"{}\" --disable-install-doc".format(
+                        self.run("{} --prefix={} --target={} --without-ext=\"{},\" --disable-install-doc".format(
                             os.path.join("win32", "configure.bat"),
                             self.package_folder,
                             target,
