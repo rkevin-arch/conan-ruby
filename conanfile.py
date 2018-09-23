@@ -9,152 +9,132 @@ class RubyConan(ConanFile):
     url = "https://github.com/elizagamedev/conan-ruby"
     description = "The Ruby Programming Language"
     settings = "os", "compiler", "build_type", "arch"
+    requires = "zlib/1.2.11@conan/stable"
+    build_requires = "ruby_installer/2.5.1@eliza/stable"
     extensions = (
-        "bigdecimal",
-        "cgi/escape",
-        "continuation",
-        "coverage",
-        "date",
         "dbm",
-        # "digest/bubblebabble",
-        # "digest",
-        # "digest/md5",
-        # "digest/rmd160",
-        # "digest/sha1",
-        # "digest/sha2",
-        "etc",
-        "fcntl",
-        "fiber",
-        "fiddle",
         "gdbm",
-        "io/console",
-        "io/nonblock",
-        "io/wait",
-        "json",
-        "json/generator",
-        "json/parser",
-        "nkf",
-        "objspace",
         "openssl",
-        "pathname",
-        "psych",
         "pty",
-        "racc/cparse",
-        "rbconfig/sizeof",
         "readline",
-        "ripper",
-        "sdbm",
-        "socket",
-        # "stringio",
-        "strscan",
         "syslog",
-        "win32",
-        "win32ole",
-        "zlib",
     )
-    options = dict({
-        "shared": [True, False],
-    }, **{"with_" + extension: [True, False] for extension in extensions})
-    default_options = (
-        "shared=False",
-        "cygwin_installer:additional_packages=bison,ruby",
-    ) + tuple("with_{}=False".format(extension) for extension in extensions)
+    options = dict({"shared": [True, False]},
+                   **{"with_" + extension: [True, False] for extension in extensions})
+    default_options = (("shared=False",)
+                       + tuple("with_{}=False".format(extension) for extension in extensions))
+
+    folder = "ruby-{}".format(version)
 
     def config_options(self):
         del self.settings.compiler.libcxx
         if self.settings.compiler == "Visual Studio":
             del self.settings.build_type
 
-    def configure(self):
-        if self.settings.os == "Windows" and self.settings.compiler != "Visual Studio":
-            raise Exception("Only Visual Studio supported on Windows")
-
     def build_requirements(self):
-        if self.settings.os == "Windows":
-            self.build_requires("cygwin_installer/2.9.0@bincrafters/stable")
+        if tools.os_info.is_windows:
+            self.build_requires("msys2_installer/20161025@bincrafters/stable")
 
     def requirements(self):
-        if self.options.with_zlib:
-            self.requires("zlib/1.2.11@conan/stable")
+        if self.options.with_openssl:
+            self.requires("OpenSSL/1.1.0i@conan/stable")
 
     def source(self):
-        self.run("git clone https://github.com/ruby/ruby.git -b v{} --depth 1"
-                 .format(self.version.replace(".", "_")))
+        tools.get("https://cache.ruby-lang.org/pub/ruby/{}/{}.tar.gz".format(
+            self.version.rpartition(".")[0],
+            self.folder))
 
-    def build(self):
+    def build_configure(self):
         without_ext = (tuple(extension for extension in self.extensions
                              if not getattr(self.options, "with_" + extension)))
 
-        with tools.chdir("ruby"):
+        with tools.chdir(self.folder):
             if self.settings.compiler == "Visual Studio":
-                cygwin_bin = self.deps_env_info["cygwin_installer"].CYGWIN_BIN
-                with tools.environment_append({"PATH": [cygwin_bin],
-                                               "INCLUDE": self.deps_cpp_info.include_paths,
+                with tools.environment_append({"INCLUDE": self.deps_cpp_info.include_paths,
                                                "LIB": self.deps_cpp_info.lib_paths}):
-                    with tools.vcvars(self.settings):
-                        if self.settings.arch == "x86":
-                            target = "i386-mswin32"
-                        elif self.settings.arch == "x86_64":
-                            target = "x64-mswin64"
-                        else:
-                            raise Exception("Invalid arch")
-                        self.run("{} --prefix={} --target={} --without-ext=\"{},\" --disable-install-doc".format(
-                            os.path.join("win32", "configure.bat"),
-                            self.package_folder,
-                            target,
-                            ",".join(without_ext)))
-                        self.run("nmake")
-                        self.run("nmake install")
+                    if self.settings.arch == "x86":
+                        target = "i686-mswin32"
+                    elif self.settings.arch == "x86_64":
+                        target = "x64-mswin64"
+                    else:
+                        raise Exception("Invalid arch")
+                    self.run("{} --prefix={} --target={} --without-ext=\"{},\" --disable-install-doc".format(
+                        os.path.join("win32", "configure.bat"),
+                        self.package_folder,
+                        target,
+                        ",".join(without_ext)))
+                    self.run("nmake")
+                    self.run("nmake install")
             else:
-                autotools = AutoToolsBuildEnvironment(self)
-                self.run("autoconf")
-                sharedargs = (['--enable-shared', '--disable-static']
-                              if self.options.shared else
-                              ['--enable-static', '--disable-shared'])
-                autotools.configure(args=[
+                win_bash = tools.os_info.is_windows
+                autotools = AutoToolsBuildEnvironment(self, win_bash=win_bash)
+                # Remove our libs; Ruby doesn't like Conan's help
+                autotools.libs = []
+
+                args = [
                     "--with-out-ext=" + ",".join(without_ext),
-                    "--disable-install-rdoc",
+                    "--disable-install-doc",
                     "--without-gmp",
-                ] + sharedargs)
+                    "--enable-shared",
+                ]
+
+                autotools.configure(args=args)
                 autotools.make()
                 autotools.install()
+
+    def build(self):
+        if tools.os_info.is_windows:
+            msys_bin = self.deps_env_info["msys2_installer"].MSYS_BIN
+            # Make sure that Ruby is first in the path order
+            path = self.deps_env_info["ruby_installer"].path + [msys_bin]
+            with tools.environment_append({"PATH": path,
+                                           "CONAN_BASH_PATH": os.path.join(msys_bin, "bash.exe")}):
+                if self.settings.compiler == "Visual Studio":
+                    with tools.vcvars(self.settings):
+                        self.build_configure()
+                else:
+                    self.build_configure()
+        else:
+            self.build_configure()
 
     def package(self):
         pass
 
-    def package_info(self):
-        includedir = os.path.join("include", "ruby-2.5.0")
-        self.cpp_info.includedirs = [includedir]
-        if self.settings.os == "Windows":
-            # Find include config dir
-            includename = None
-            for f in os.listdir(os.path.join(self.package_folder, includedir)):
-                if "mswin" in f:
-                    includename = f
-                    break
-            if not includename:
-                raise Exception("Could not find Ruby config dir")
-            # Find library
-            libname = None
-            for f in os.listdir(os.path.join(self.package_folder, "lib")):
-                name, ext = os.path.splitext(f)
-                if ext == ".lib":
+    @property
+    def libname(self):
+        for f in os.listdir(os.path.join(self.package_folder, "lib")):
+            name, ext = os.path.splitext(f)
+            if self.settings.os == "Windows":
+                if ext == ".lib" or ext == ".a":
                     if self.options.shared:
                         if not name.endswith("-static"):
-                            libname = name
-                            break
+                            return name
                     else:
                         if name.endswith("-static"):
-                            libname = name
-                            break
-            if not libname:
-                raise Exception("Could not find Ruby lib")
-            self.cpp_info.libs = [libname, "ws2_32", "Iphlpapi", "Shlwapi", "Dbghelp"]
-        else:
-            if self.settings.os == "Linux":
-                includename = "{}-linux".format(self.settings.arch)
+                            return name
             else:
-                raise Exception("Could not find Ruby config dir")
-            self.cpp_info.libs = tools.collect_libs(self) + ["dl", "crypt", "m"]
-            self.cpp_info.cppflags = ["-pthread"]
-        self.cpp_info.includedirs.append(os.path.join(includedir, includename))
+                if ext.startswith(".so") or ext.startswith(".dylib"):
+                    if self.options.shared:
+                        return name
+                elif ext == ".a":
+                    if not self.options.shared:
+                        return name
+
+    def package_info(self):
+        self.cpp_info.libs = [self.libname]
+
+        # Find include config dir
+        includedir = os.path.join("include", "ruby-2.5.0")
+        configdir = None
+        for f in os.listdir(os.path.join(self.package_folder, includedir)):
+            if "mswin" in f or "mingw" in f or "linux" in f:
+                configdir = f
+                break
+        if not includedir:
+            raise Exception("Could not find Ruby config dir")
+        self.cpp_info.includedirs = [includedir,
+                                     os.path.join(includedir, configdir)]
+
+        # Append extra libraries for MSVC
+        if self.settings.compiler == "Visual Studio":
+            self.cpp_info.libs.extend(["ws2_32", "Iphlpapi", "Shlwapi", "Dbghelp"])
