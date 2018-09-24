@@ -19,10 +19,8 @@ class RubyConan(ConanFile):
         "readline",
         "syslog",
     )
-    options = dict({"shared": [True, False]},
-                   **{"with_" + extension: [True, False] for extension in extensions})
-    default_options = (("shared=False",)
-                       + tuple("with_{}=False".format(extension) for extension in extensions))
+    options = {"with_" + extension: [True, False] for extension in extensions}
+    default_options = tuple("with_{}=False".format(extension) for extension in extensions)
 
     folder = "ruby-{}".format(version)
 
@@ -58,7 +56,7 @@ class RubyConan(ConanFile):
                         target = "x64-mswin64"
                     else:
                         raise Exception("Invalid arch")
-                    self.run("{} --prefix={} --target={} --without-ext=\"{},\" --disable-install-doc".format(
+                    self.run("{} --prefix={} --target={} --without-ext=\"{},\" --disable-install-doc --disable-install-static-library".format(
                         os.path.join("win32", "configure.bat"),
                         self.package_folder,
                         target,
@@ -76,6 +74,7 @@ class RubyConan(ConanFile):
                     "--disable-install-doc",
                     "--without-gmp",
                     "--enable-shared",
+                    "--disable-static",
                 ]
 
                 autotools.configure(args=args)
@@ -97,31 +96,8 @@ class RubyConan(ConanFile):
         else:
             self.build_configure()
 
-    def package(self):
-        pass
-
-    @property
-    def libname(self):
-        for f in os.listdir(os.path.join(self.package_folder, "lib")):
-            name, ext = os.path.splitext(f)
-            if self.settings.os == "Windows":
-                if ext == ".lib" or ext == ".a":
-                    if self.options.shared:
-                        if not name.endswith("-static"):
-                            return name
-                    else:
-                        if name.endswith("-static"):
-                            return name
-            else:
-                if ext.startswith(".so") or ext.startswith(".dylib"):
-                    if self.options.shared:
-                        return name
-                elif ext == ".a":
-                    if not self.options.shared:
-                        return name
-
     def package_info(self):
-        self.cpp_info.libs = [self.libname]
+        self.cpp_info.libs = tools.collect_libs(self)
 
         # Find include config dir
         includedir = os.path.join("include", "ruby-2.5.0")
