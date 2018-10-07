@@ -115,7 +115,7 @@ class RubyConan(ConanFile):
         includedir = os.path.join("include", "ruby-2.3.0")
         configdir = None
         for f in os.listdir(os.path.join(self.package_folder, includedir)):
-            if "mswin" in f or "mingw" in f or "linux" in f:
+            if "mswin" in f or "mingw" in f or "linux" in f or "darwin" in f:
                 configdir = f
                 break
         if not includedir:
