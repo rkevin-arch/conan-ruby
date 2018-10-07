@@ -1,16 +1,17 @@
 from conans import ConanFile, AutoToolsBuildEnvironment, tools
+from conans.errors import ConanException
 import os.path
 
 
 class RubyConan(ConanFile):
     name = "ruby"
-    version = "2.5.1"
+    version = "2.3.7"
     license = "MIT"
     url = "https://github.com/elizagamedev/conan-ruby"
     description = "The Ruby Programming Language"
     settings = "os", "compiler", "build_type", "arch"
     requires = "zlib/1.2.11@conan/stable"
-    build_requires = "ruby_installer/2.5.1@eliza/stable"
+    build_requires = "ruby_installer/2.3.3@eliza/stable"
     extensions = (
         "dbm",
         "gdbm",
@@ -56,7 +57,7 @@ class RubyConan(ConanFile):
                         target = "x64-mswin64"
                     else:
                         raise Exception("Invalid arch")
-                    self.run("{} --prefix={} --target={} --without-ext=\"{},\" --disable-install-doc --disable-install-static-library".format(
+                    self.run("{} --prefix={} --target={} --without-ext=\"{},\" --disable-install-doc".format(
                         os.path.join("win32", "configure.bat"),
                         self.package_folder,
                         target,
@@ -74,7 +75,6 @@ class RubyConan(ConanFile):
                     "--disable-install-doc",
                     "--without-gmp",
                     "--enable-shared",
-                    "--disable-static",
                 ]
 
                 autotools.configure(args=args)
@@ -97,10 +97,22 @@ class RubyConan(ConanFile):
             self.build_configure()
 
     def package_info(self):
-        self.cpp_info.libs = tools.collect_libs(self)
+        # Find correct lib (shared)
+        libname = None
+        for f in os.listdir("lib"):
+            name, ext = os.path.splitext(f)
+            if ext in (".so", ".lib", ".a", ".dylib"):
+                if ext != ".lib" and name.startswith("lib"):
+                    name = name[3:]
+                if not name.endswith("-static"):
+                    libname = name
+                    break
+        if not libname:
+            raise ConanException("Could not find built shared library")
+        self.cpp_info.libs = [libname]
 
         # Find include config dir
-        includedir = os.path.join("include", "ruby-2.5.0")
+        includedir = os.path.join("include", "ruby-2.3.0")
         configdir = None
         for f in os.listdir(os.path.join(self.package_folder, includedir)):
             if "mswin" in f or "mingw" in f or "linux" in f:
@@ -110,7 +122,3 @@ class RubyConan(ConanFile):
             raise Exception("Could not find Ruby config dir")
         self.cpp_info.includedirs = [includedir,
                                      os.path.join(includedir, configdir)]
-
-        # Append extra libraries for MSVC
-        if self.settings.compiler == "Visual Studio":
-            self.cpp_info.libs.extend(["ws2_32", "Iphlpapi", "Shlwapi", "Dbghelp"])
