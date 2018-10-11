@@ -10,7 +10,7 @@ class RubyConan(ConanFile):
     description = "The Ruby Programming Language"
     settings = "os", "compiler", "build_type", "arch"
     requires = "zlib/1.2.11@conan/stable"
-    build_requires = "ruby_installer/2.5.1@eliza/stable"
+    build_requires = "ruby_installer/2.5.1@bincrafters/stable"
     extensions = (
         "dbm",
         "gdbm",
