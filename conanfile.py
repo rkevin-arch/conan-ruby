@@ -4,7 +4,7 @@ import os.path
 
 class RubyConan(ConanFile):
     name = "ruby"
-    version = "2.5.1"
+    version = "2.5.3"
     license = "MIT"
     url = "https://github.com/elizagamedev/conan-ruby"
     description = "The Ruby Programming Language"
