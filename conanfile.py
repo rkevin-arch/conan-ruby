@@ -5,12 +5,13 @@ import os.path
 class RubyConan(ConanFile):
     name = "ruby"
     version = "2.5.3"
-    license = "MIT"
-    url = "https://github.com/elizagamedev/conan-ruby"
     description = "The Ruby Programming Language"
+    topics = ("conan", "ruby")
+    url = "https://github.com/elizagamedev/conan-ruby"
+    homepage = "https://www.ruby-lang.org"
+    author = "Eliza Velasquez"
+    license = "MIT"
     settings = "os", "compiler", "build_type", "arch"
-    requires = "zlib/1.2.11@conan/stable"
-    build_requires = "ruby_installer/2.5.1@bincrafters/stable"
     extensions = (
         "dbm",
         "gdbm",
@@ -20,9 +21,12 @@ class RubyConan(ConanFile):
         "syslog",
     )
     options = {"with_" + extension: [True, False] for extension in extensions}
-    default_options = tuple("with_{}=False".format(extension) for extension in extensions)
+    default_options = {"with_" + extension: False for extension in extensions}
 
-    folder = "ruby-{}".format(version)
+    _source_subfolder = "ruby-{}".format(version)
+
+    requires = "zlib/1.2.11@conan/stable"
+    build_requires = "ruby_installer/2.5.1@bincrafters/stable"
 
     def config_options(self):
         del self.settings.compiler.libcxx
@@ -40,13 +44,13 @@ class RubyConan(ConanFile):
     def source(self):
         tools.get("https://cache.ruby-lang.org/pub/ruby/{}/{}.tar.gz".format(
             self.version.rpartition(".")[0],
-            self.folder))
+            self._source_subfolder))
 
     def build_configure(self):
         without_ext = (tuple(extension for extension in self.extensions
                              if not getattr(self.options, "with_" + extension)))
 
-        with tools.chdir(self.folder):
+        with tools.chdir(self._source_subfolder):
             if self.settings.compiler == "Visual Studio":
                 with tools.environment_append({"INCLUDE": self.deps_cpp_info.include_paths,
                                                "LIB": self.deps_cpp_info.lib_paths}):
