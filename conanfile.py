@@ -29,10 +29,8 @@ class RubyConan(ConanFile):
     requires = "zlib/1.2.11@conan/stable"
     build_requires = "ruby_installer/2.5.1@bincrafters/stable"
 
-    def config_options(self):
+    def configure(self):
         del self.settings.compiler.libcxx
-        if self.settings.compiler == "Visual Studio":
-            del self.settings.build_type
 
     def build_requirements(self):
         if tools.os_info.is_windows:
@@ -66,6 +64,18 @@ class RubyConan(ConanFile):
                         self.package_folder,
                         target,
                         ",".join(without_ext)))
+
+                    # Patch in runtime settings
+                    def define(line):
+                        tools.replace_in_file(
+                            "Makefile",
+                            "CC = cl -nologo",
+                            "CC = cl -nologo\n" + line)
+                    define("RUNTIMEFLAG = -{}".format(self.settings.compiler.runtime))
+                    if self.settings.build_type == "Debug":
+                        define("COMPILERFLAG = -Zi")
+                        define("OPTFLAGS = -Od -Ob0")
+
                     self.run("nmake")
                     self.run("nmake install")
             else:
