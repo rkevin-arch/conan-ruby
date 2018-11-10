@@ -83,6 +83,8 @@ class RubyConan(ConanFile):
                 autotools = AutoToolsBuildEnvironment(self, win_bash=win_bash)
                 # Remove our libs; Ruby doesn't like Conan's help
                 autotools.libs = []
+                if self.settings.compiler == "clang":
+                    autotools.link_flags.append("--rtlib=compiler-rt")
 
                 args = [
                     "--with-out-ext=" + ",".join(without_ext),
