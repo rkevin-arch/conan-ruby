@@ -26,8 +26,7 @@ class RubyConan(ConanFile):
 
     _source_subfolder = "ruby-{}".format(version)
 
-    requires = "zlib/1.2.11@conan/stable"
-    build_requires = "ruby_installer/2.5.1@bincrafters/stable"
+    build_requires = "ruby_installer/2.5.5@bincrafters/stable"
 
     def configure(self):
         del self.settings.compiler.libcxx
