@@ -8,7 +8,7 @@ class RubyConan(ConanFile):
     version = "2.5.3"
     description = "The Ruby Programming Language"
     topics = ("conan", "ruby")
-    url = "https://github.com/elizagamedev/conan-ruby"
+    url = "https://github.com/rkevin-arch/conan-ruby"
     homepage = "https://www.ruby-lang.org"
     author = "Eliza Velasquez"
     license = "MIT"
@@ -20,6 +20,7 @@ class RubyConan(ConanFile):
         "pty",
         "readline",
         "syslog",
+        "socket",
     )
     options = {"with_" + extension: [True, False] for extension in extensions}
     default_options = {"with_" + extension: False for extension in extensions}
@@ -48,6 +49,9 @@ class RubyConan(ConanFile):
         without_ext = (tuple(extension for extension in self.extensions
                              if not getattr(self.options, "with_" + extension)))
 
+        with_ext = (tuple(extension for extension in self.extensions
+                             if getattr(self.options, "with_" + extension)))
+
         with tools.chdir(self._source_subfolder):
             if self.settings.compiler == "Visual Studio":
                 with tools.environment_append({"INCLUDE": self.deps_cpp_info.include_paths,
@@ -58,11 +62,12 @@ class RubyConan(ConanFile):
                         target = "x64-mswin64"
                     else:
                         raise Exception("Invalid arch")
-                    self.run("{} --prefix={} --target={} --without-ext=\"{},\" --disable-install-doc".format(
+                    self.run('{} --prefix={} --target={} --without-ext="{}," --with-ext="{}," --disable-install-doc'.format(
                         os.path.join("win32", "configure.bat"),
                         self.package_folder,
                         target,
-                        ",".join(without_ext)))
+                        ",".join(without_ext),
+                        ",".join(with_ext)))
 
                     # Patch in runtime settings
                     def define(line):
@@ -87,6 +92,7 @@ class RubyConan(ConanFile):
 
                 args = [
                     "--with-out-ext=" + ",".join(without_ext),
+                    "--with-ext=" + ",".join(with_ext),
                     "--disable-install-doc",
                     "--without-gmp",
                     "--enable-shared",
