@@ -8,7 +8,7 @@ class RubyConan(ConanFile):
     version = "2.5.3"
     description = "The Ruby Programming Language"
     topics = ("conan", "ruby")
-    url = "https://github.com/rkevin-arch/conan-ruby"
+    url = "https://github.com/elizagamedev/conan-ruby"
     homepage = "https://www.ruby-lang.org"
     author = "Eliza Velasquez"
     license = "MIT"
@@ -20,10 +20,9 @@ class RubyConan(ConanFile):
         "pty",
         "readline",
         "syslog",
-        "socket",
     )
-    options = {"with_" + extension: [True, False] for extension in extensions}
-    default_options = {"with_" + extension: False for extension in extensions}
+    options = dict([("with_" + extension, [True, False]) for extension in extensions] + [("additional_exts", "ANY")])
+    default_options = dict([("with_" + extension, False) for extension in extensions if extension != "openssl"] + [("with_openssl", True), ("additional_exts", "openssl,socket,fiber,stringio,digest,io/nonblock,zlib,psych,strscan")])
 
     _source_subfolder = "ruby-{}".format(version)
 
@@ -39,6 +38,7 @@ class RubyConan(ConanFile):
     def requirements(self):
         if self.options.with_openssl:
             self.requires("OpenSSL/1.1.0i@conan/stable")
+            self.requires("zlib/1.2.11")
 
     def source(self):
         tools.get("https://cache.ruby-lang.org/pub/ruby/{}/{}.tar.gz".format(
@@ -48,9 +48,6 @@ class RubyConan(ConanFile):
     def build_configure(self):
         without_ext = (tuple(extension for extension in self.extensions
                              if not getattr(self.options, "with_" + extension)))
-
-        with_ext = (tuple(extension for extension in self.extensions
-                             if getattr(self.options, "with_" + extension)))
 
         with tools.chdir(self._source_subfolder):
             if self.settings.compiler == "Visual Studio":
@@ -62,12 +59,12 @@ class RubyConan(ConanFile):
                         target = "x64-mswin64"
                     else:
                         raise Exception("Invalid arch")
-                    self.run('{} --prefix={} --target={} --without-ext="{}," --with-ext="{}," --disable-install-doc'.format(
+                    self.run('{} --prefix={} --target={} --without-ext="{}," --with-ext="{}" --with-static-linked-ext --disable-install-doc'.format(
                         os.path.join("win32", "configure.bat"),
                         self.package_folder,
                         target,
                         ",".join(without_ext),
-                        ",".join(with_ext)))
+                        str(self.options.get_safe("additional_exts"))))
 
                     # Patch in runtime settings
                     def define(line):
@@ -92,7 +89,8 @@ class RubyConan(ConanFile):
 
                 args = [
                     "--with-out-ext=" + ",".join(without_ext),
-                    "--with-ext=" + ",".join(with_ext),
+                    "--with-ext=" + str(self.options.get_safe("additional_exts")),
+                    "--with-static-linked-ext",
                     "--disable-install-doc",
                     "--without-gmp",
                     "--enable-shared",
