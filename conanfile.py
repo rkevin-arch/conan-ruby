@@ -22,7 +22,7 @@ class RubyConan(ConanFile):
         "syslog",
     )
     options = dict([("with_" + extension, [True, False]) for extension in extensions] + [("additional_exts", "ANY")])
-    default_options = dict([("with_" + extension, False) for extension in extensions if extension != "openssl"] + [("with_openssl", True), ("additional_exts", "openssl,socket,fiber,stringio,digest,io/nonblock,zlib,psych,strscan")])
+    default_options = dict([("with_" + extension, False) for extension in extensions if extension != "openssl"] + [("with_openssl", True), ("additional_exts", "openssl,socket,fiber,stringio,digest,io/nonblock,zlib,psych,strscan,io/wait")])
 
     _source_subfolder = "ruby-{}".format(version)
 
@@ -59,7 +59,7 @@ class RubyConan(ConanFile):
                         target = "x64-mswin64"
                     else:
                         raise Exception("Invalid arch")
-                    self.run('{} --prefix={} --target={} --without-ext="{}," --with-ext="{}" --with-static-linked-ext --disable-install-doc'.format(
+                    self.run('{} --prefix={} --target={} --without-ext="{}," --with-ext="{}" --disable-install-doc'.format(
                         os.path.join("win32", "configure.bat"),
                         self.package_folder,
                         target,
@@ -90,10 +90,10 @@ class RubyConan(ConanFile):
                 args = [
                     "--with-out-ext=" + ",".join(without_ext),
                     "--with-ext=" + str(self.options.get_safe("additional_exts")),
-                    "--with-static-linked-ext",
                     "--disable-install-doc",
                     "--without-gmp",
                     "--enable-shared",
+                    "--enable-load-relative",
                 ]
 
                 autotools.configure(args=args)
@@ -119,6 +119,7 @@ class RubyConan(ConanFile):
         # Find correct lib (shared)
         libname = None
         for f in os.listdir("lib"):
+            print(f)
             name, ext = os.path.splitext(f)
             if ext in (".so", ".lib", ".a", ".dylib"):
                 if ext != ".lib" and name.startswith("lib"):

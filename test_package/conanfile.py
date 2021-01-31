@@ -15,9 +15,10 @@ class RubyoneshotTestConan(ConanFile):
         cmake.build()
 
     def imports(self):
-        self.copy("*.dll", dst="bin", src="bin")
-        self.copy("*.dylib*", dst="bin", src="lib")
-        self.copy('*.so*', dst='bin', src='lib')
+        self.copy("*.dll", dst="lib", src="bin")
+        self.copy("*.dylib*", dst="lib", src="lib")
+        self.copy('*.so*', dst='lib', src='lib')
+        self.copy('*', dst='lib/ruby/', src='lib/ruby/2.5.0/')
 
     def test(self):
         if not tools.cross_building(self.settings):
