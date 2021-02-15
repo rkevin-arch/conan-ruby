@@ -1,0 +1,49 @@
+name: Build ruby_discord_game_sdk
+on: push
+jobs:
+  build-windows:
+    name: Build for Windows
+    runs-on: windows-2019
+    env:
+      CONAN_USER_HOME: C:\.conan
+      CONAN_USER_HOME_SHORT: C:\.conan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install and configure conan
+        run: |
+          pip install conan;
+          conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan;
+          setx CONAN_USE_ALWAYS_SHORT_PATHS 1;
+      - name: Build dependencies using conan
+        run: |
+          conan source .;
+          conan install . --build=missing
+      - name: Build ruby
+        run: conan build .
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ruby_discord_game_sdk_linux_${{ github.sha }}
+          path: package/lib/ruby/2.5.0/x64-mswin64_140/ruby_discord_game_sdk/ruby_discord_game_sdk.so
+  build-linux:
+    name: Build for Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+      - name: Install and configure conan
+        run: |
+          pip3 install conan
+          conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan;
+      - name: Build dependencies using conan
+        run: conan source . && conan install . --build=missing
+      - name: Build ruby
+        run: conan build .
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ruby_discord_game_sdk_linux_${{ github.sha }}
+          path: package/lib/ruby/2.5.0/x86_64-linux/ruby_discord_game_sdk/ruby_discord_game_sdk.so

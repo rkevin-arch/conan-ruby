@@ -1,0 +1,3 @@
+[submodule "ruby_discord_game_sdk"]
+	path = ruby_discord_game_sdk
+	url = https://github.com/rkevin-arch/ruby_discord_game_sdk

@@ -1,7 +1,7 @@
 from conans import ConanFile, AutoToolsBuildEnvironment, tools
 from conans.errors import ConanException
 import os.path
-
+import shutil
 
 class RubyConan(ConanFile):
     name = "ruby"
@@ -43,6 +43,14 @@ class RubyConan(ConanFile):
         tools.get("https://cache.ruby-lang.org/pub/ruby/{}/{}.tar.gz".format(
             self.version.rpartition(".")[0],
             self._source_subfolder))
+        shutil.copytree(
+            os.path.join(self.recipe_folder, "ruby_discord_game_sdk/ext/ruby_discord_game_sdk/"),
+            os.path.join(self._source_subfolder, "ext/ruby_discord_game_sdk/")
+        )
+        shutil.copytree(
+            os.path.join(self.recipe_folder, "ruby_discord_game_sdk/third_party/"),
+            os.path.join(self._source_subfolder, "third_party/")
+        )
 
     def build_configure(self):
         without_ext = (tuple(extension for extension in self.extensions
