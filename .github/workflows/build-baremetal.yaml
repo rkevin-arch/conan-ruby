@@ -10,6 +10,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Install and configure conan
         run: |
           pip install conan;
@@ -32,6 +34,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Setup Python
         uses: actions/setup-python@v2
       - name: Install and configure conan
