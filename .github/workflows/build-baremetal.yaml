@@ -63,4 +63,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ruby_discord_game_sdk_${{ github.sha }}
-          path: package/lib/ruby/2.5.0/x86_64-linux/ruby_discord_game_sdk/ruby_discord_game_sdk.so
+          path: artifact-upload
