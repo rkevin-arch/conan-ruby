@@ -23,11 +23,17 @@ jobs:
           conan install . --build=missing
       - name: Build ruby
         run: conan build .
+      - name: Format artifact directory structure
+        run: |
+          mkdir artifact-upload;
+          copy ruby_discord_game_sdk/third_party/lib/x86_64/discord_game_sdk.dll artifact-upload;
+          mkdir artifact-upload/lib/ruby/x64-mswin64_140;
+          copy package/lib/ruby/2.5.0/x64-mswin64_140/ruby_discord_game_sdk/ruby_discord_game_sdk.so artifact-upload/lib/ruby/x64-mswin64_140
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ruby_discord_game_sdk_windows_${{ github.sha }}
-          path: package/lib/ruby/2.5.0/x64-mswin64_140/ruby_discord_game_sdk/ruby_discord_game_sdk.so
+          name: ruby_discord_game_sdk_${{ github.sha }}
+          path: artifact-upload
   build-linux:
     name: Build for Linux
     runs-on: ubuntu-latest
@@ -46,8 +52,15 @@ jobs:
         run: conan source . && conan install . --build=missing
       - name: Build ruby
         run: conan build .
+      - name: Format artifact directory structure
+        run: |
+          mkdir artifact-upload &&
+          cp ruby_discord_game_sdk/third_party/lib/x86_64/discord_game_sdk.so artifact-upload &&
+          mkdir -p artifact-upload/lib/ruby/x86_64-linux &&
+          cp package/lib/ruby/2.5.0/x86_64-linux/ruby_discord_game_sdk/ruby_discord_game_sdk.so artifact-upload/lib/ruby/x86_64-linux &&
+          cp -r ruby_discord_game_sdk/lib/* artifact-upload/lib/ruby
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ruby_discord_game_sdk_linux_${{ github.sha }}
+          name: ruby_discord_game_sdk_${{ github.sha }}
           path: package/lib/ruby/2.5.0/x86_64-linux/ruby_discord_game_sdk/ruby_discord_game_sdk.so
