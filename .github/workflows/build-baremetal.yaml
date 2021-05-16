@@ -15,7 +15,8 @@ jobs:
       - name: Install and configure conan
         run: |
           pip install conan;
-          conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan;
+          conan remote add bincrafters https://bincrafters.jfrog.io/artifactory/api/conan/public-conan;
+          conan config set general.revisions_enabled=1
           setx CONAN_USE_ALWAYS_SHORT_PATHS 1;
       - name: Build dependencies using conan
         run: |
@@ -47,7 +48,8 @@ jobs:
       - name: Install and configure conan
         run: |
           pip3 install conan
-          conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan;
+          conan remote add bincrafters https://bincrafters.jfrog.io/artifactory/api/conan/public-conan
+          conan config set general.revisions_enabled=1
       - name: Build dependencies using conan
         run: conan source . && conan install . --build=missing
       - name: Build ruby
