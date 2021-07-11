@@ -42,3 +42,12 @@ tmp/
 .pydevproject
 .settings/*
 .ropeproject/*
+
+# Conan cache / built artifacts
+conan.lock
+conanbuildinfo.txt
+conaninfo.txt
+graph_info.json
+package/
+ruby-*/
+
