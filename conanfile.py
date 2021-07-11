@@ -5,12 +5,12 @@ import os.path
 
 class RubyConan(ConanFile):
     name = "ruby"
-    version = "2.5.3"
+    version = "3.0.1"
     description = "The Ruby Programming Language"
     topics = ("conan", "ruby")
-    url = "https://github.com/elizagamedev/conan-ruby"
+    url = "https://github.com/rkevin-arch/conan-ruby"
     homepage = "https://www.ruby-lang.org"
-    author = "Eliza Velasquez"
+    author = "Eliza Velasquez / Kevin R"
     license = "MIT"
     settings = "os", "compiler", "build_type", "arch"
     extensions = (
@@ -37,7 +37,7 @@ class RubyConan(ConanFile):
 
     def requirements(self):
         if self.options.with_openssl:
-            self.requires("OpenSSL/1.1.0i@conan/stable")
+            self.requires("OpenSSL/1.1.1k@bincrafters/stable")
 
     def source(self):
         tools.get("https://cache.ruby-lang.org/pub/ruby/{}/{}.tar.gz".format(
@@ -127,7 +127,7 @@ class RubyConan(ConanFile):
         self.cpp_info.libs = [libname]
 
         # Find include config dir
-        includedir = os.path.join("include", "ruby-2.5.0")
+        includedir = os.path.join("include", "ruby-3.0.0")
         configdir = None
         for f in os.listdir(os.path.join(self.package_folder, includedir)):
             if "mswin" in f or "mingw" in f or "linux" in f or "darwin" in f:
