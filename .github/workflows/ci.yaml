@@ -1,0 +1,53 @@
+name: Build ruby
+on: push
+jobs:
+  linux-basic:
+    name: Linux Build, Basic
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+      - name: Install and configure conan
+        run: |
+          pip3 install conan
+          conan remote add bincrafters https://bincrafters.jfrog.io/artifactory/api/conan/public-conan;
+          conan config set general.revisions_enabled=1;
+          mkdir ${{ runner.temp }}/build
+      - name: Cache conan dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.conan
+          key: ${{ runner.os }}-cached-conan-modules-basic-${{ hashFiles('conanfile.py') }}
+      - name: Build dependencies
+        run: conan install ${{ github.workspace }} --build=missing
+        working-directory: ${{ runner.temp }}/build
+      - name: Build and test ruby
+        run: conan create ${{ github.workspace }}
+  windows-basic:
+    name: Windows Build, Basic
+    runs-on: windows-2019
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install conan and xxd
+        run: choco install -y vim; pip install conan
+      - name: Set path to include xxd
+        run: '[Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\tools\vim\vim82", "Machine")'
+      - name: Configure conan
+        run: |
+          conan remote add bincrafters https://bincrafters.jfrog.io/artifactory/api/conan/public-conan;
+          conan config set general.revisions_enabled=1;
+          setx CONAN_USE_ALWAYS_SHORT_PATHS 1;
+          mkdir ${{ runner.temp }}\build
+      - name: Cache conan dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.conan
+          key: ${{ runner.os }}-cached-conan-modules-basic-${{ hashFiles('conanfile.py') }}
+      - name: Build dependencies
+        run: conan install ${{ github.workspace }} --build=missing
+        working-directory: ${{ runner.temp }}/build
+      - name: Build and test ruby
+        run: conan create ${{ github.workspace }}
