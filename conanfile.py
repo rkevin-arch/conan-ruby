@@ -37,7 +37,7 @@ class RubyConan(ConanFile):
 
     def requirements(self):
         if self.options.with_openssl:
-            self.requires("OpenSSL/1.1.1k@bincrafters/stable")
+            self.requires("openssl/1.1.1k")
 
     def source(self):
         tools.get("https://cache.ruby-lang.org/pub/ruby/{}/{}.tar.gz".format(
